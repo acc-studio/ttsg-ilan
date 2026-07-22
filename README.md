@@ -8,12 +8,11 @@ summarize individual ilans — all from Claude.
 
 ## Install (firm members)
 
-> Replace `<github-user>` with the account hosting this repo.
 
 In Claude Code, run these three commands:
 
 ```
-/plugin marketplace add <github-user>/ttsg-ilan
+/plugin marketplace add acc-studio/ttsg-ilan
 ```
 ```
 /plugin install ttsg-ilan@anka-law
