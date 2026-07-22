@@ -43,8 +43,14 @@ let context = null;
 async function ensureContext() {
     if (context)
         return context;
+    // Use an installed system browser (Chrome by default) rather than Playwright's
+    // bundled Chromium, which lives inside the packaged-app sandbox and fails to
+    // spawn ("spawn UNKNOWN"). Overridable via env for machines without Chrome.
+    const channel = process.env.TTSG_BROWSER_CHANNEL?.trim() || "chrome";
+    const executablePath = process.env.TTSG_BROWSER_EXECUTABLE?.trim() || undefined;
     context = await chromium.launchPersistentContext(profileDir(), {
         headless: false,
+        ...(executablePath ? { executablePath } : { channel }),
         viewport: { width: 1280, height: 900 },
         args: ["--disable-blink-features=AutomationControlled"],
     });
