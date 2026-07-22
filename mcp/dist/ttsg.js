@@ -198,8 +198,16 @@ export async function loadOffices() {
         .filter((o) => o.id && o.id !== "0"));
     return offices;
 }
-function toIso(ddmmyyyy) {
-    return ddmmyyyy; // site expects dd.mm.yyyy; pass through, validated at the tool layer
+/**
+ * Parse a dd.mm.yyyy string to a comparable yyyymmdd number, or null if absent
+ * / unparseable. Used for the client-side date filter (the site has no working
+ * server-side date range).
+ */
+function ymdNum(ddmmyyyy) {
+    if (!ddmmyyyy)
+        return null;
+    const m = ddmmyyyy.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    return m ? Number(`${m[3]}${m[2]}${m[1]}`) : null;
 }
 /**
  * Run a search. Requires a valid session; throws NotLoggedInError otherwise.
@@ -235,41 +243,34 @@ export async function search(params, resolvedOffice) {
         if ((await cb.count()) > 0)
             await cb.first().check().catch(() => { });
     }
-    if (params.dateFrom || params.dateTo) {
-        const rangeToggle = form
-            .getByText("Tarih Aralığına Göre Sorgulama", { exact: false })
-            .locator("xpath=following::input[@type='checkbox'][1]");
-        if ((await rangeToggle.count()) > 0)
-            await rangeToggle.first().check().catch(() => { });
-        const dateInputs = form.getByPlaceholder("gg.aa.yyyy");
-        if (params.dateFrom)
-            await dateInputs.nth(0).fill(toIso(params.dateFrom));
-        if (params.dateTo)
-            await dateInputs.nth(1).fill(toIso(params.dateTo));
-    }
+    // NOTE: ticaretsicil.gov.tr has NO working server-side date filter — the
+    // "Tarih Aralığına Göre Sorgulama" control never reveals its date inputs, so
+    // params.dateFrom/dateTo are applied CLIENT-SIDE below, after the full result
+    // set is collected.
     await form.locator('button[type="submit"]').first().click();
-    // Wait for either the results table or the "count" heading to render.
+    // Wait for the results table to render (first PDF link attaches).
     await page
         .locator('a[href*="pdf_goster.php"]')
         .first()
         .waitFor({ state: "attached", timeout: 20_000 })
         .catch(() => { });
-    const ilanlar = await page.$$eval('a[href*="pdf_goster.php"]', (links) => {
-        const seen = new Set();
-        const out = [];
-        for (const a of links) {
-            const tr = a.closest("tr");
+    // Results render as a DataTable that paginates at 10 rows/page and DETACHES
+    // off-page rows from the DOM, so a plain DOM scrape only ever sees the first
+    // page. Pull the FULL set via the DataTables API: rows() spans every page
+    // regardless of the current page/length. Fall back to a single-page DOM
+    // scrape when DataTables isn't present, so behaviour never regresses.
+    const scraped = await page.evaluate(() => {
+        const parseRow = (tr) => {
             if (!tr)
-                continue;
+                return null;
             const tds = Array.from(tr.querySelectorAll("td"));
             const cell = (i) => (tds[i]?.textContent || "").trim().replace(/\s+/g, " ");
-            const href = a.getAttribute("href") || "";
+            const a = tr.querySelector('a[href*="pdf_goster.php"]');
+            const href = a?.getAttribute("href") || "";
             const m = href.match(/Guid=([0-9a-fA-F-]+)/);
-            const guid = m ? m[1] : "";
-            if (!guid || seen.has(guid))
-                continue;
-            seen.add(guid);
-            out.push({
+            if (!m)
+                return null;
+            return {
                 office: cell(0),
                 sicilNo: cell(1),
                 unvan: cell(2),
@@ -277,12 +278,56 @@ export async function search(params, resolvedOffice) {
                 sayi: cell(4),
                 sayfa: cell(5),
                 ilanTuru: cell(6),
-                guid,
-            });
+                guid: m[1],
+            };
+        };
+        const seen = new Set();
+        const out = [];
+        const push = (r) => {
+            if (!r || !r.guid || seen.has(r.guid))
+                return;
+            seen.add(r.guid);
+            out.push(r);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const w = window;
+        const jq = w.jQuery || w.$;
+        if (jq && jq.fn && jq.fn.dataTable) {
+            try {
+                const api = jq.fn.dataTable.tables({ api: true });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                api.rows().every(function () {
+                    push(parseRow(this.node()));
+                });
+            }
+            catch {
+                /* fall through to DOM scrape */
+            }
+        }
+        if (out.length === 0) {
+            document
+                .querySelectorAll('a[href*="pdf_goster.php"]')
+                .forEach((a) => push(parseRow(a.closest("tr"))));
         }
         return out;
     });
-    const typed = ilanlar;
+    let typed = scraped;
+    // Client-side date filter (inclusive). Rows with an unparseable date are kept
+    // rather than silently dropped.
+    const fromN = ymdNum(params.dateFrom);
+    const toN = ymdNum(params.dateTo);
+    if (fromN !== null || toN !== null) {
+        typed = typed.filter((i) => {
+            const n = ymdNum(i.yayinTarihi);
+            if (n === null)
+                return true;
+            if (fromN !== null && n < fromN)
+                return false;
+            if (toN !== null && n > toN)
+                return false;
+            return true;
+        });
+    }
     // Cache metadata by Guid so getIlanPdf can build a human-readable filename
     // (the get-ilan tool only receives a Guid).
     for (const i of typed)

@@ -1,7 +1,7 @@
 {
   "name": "ttsg-ilan",
   "displayName": "TTSG İlan",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Search and retrieve Türkiye Ticaret Sicili Gazetesi (Turkish Trade Registry Gazette) announcements by company name and registry office, then summarize them.",
   "author": {
     "name": "Anka Hukuk",
