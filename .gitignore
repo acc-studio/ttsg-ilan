@@ -1,0 +1,13 @@
+# Dependencies (provisioned per-machine by scripts/setup.mjs) — NOT committed
+mcp/node_modules/
+
+# Runtime data (sessions, downloaded PDFs) — never commit
+mcp/ttsg-ilan-data/
+ttsg-ilan-data/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# NOTE: mcp/dist/ IS committed on purpose, so users don't need a TypeScript build.

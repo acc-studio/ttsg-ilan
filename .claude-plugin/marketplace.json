@@ -1,0 +1,14 @@
+{
+  "name": "anka-law",
+  "owner": {
+    "name": "Anka Hukuk",
+    "email": "accengiz@anka.law"
+  },
+  "plugins": [
+    {
+      "name": "ttsg-ilan",
+      "source": "./",
+      "description": "Search and summarize Türkiye Ticaret Sicili Gazetesi (Turkish Trade Registry Gazette) announcements by company name + registry office."
+    }
+  ]
+}

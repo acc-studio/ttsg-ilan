@@ -1,0 +1,15 @@
+{
+  "name": "ttsg-ilan",
+  "displayName": "TTSG İlan",
+  "version": "0.1.0",
+  "description": "Search and retrieve Türkiye Ticaret Sicili Gazetesi (Turkish Trade Registry Gazette) announcements by company name and registry office, then summarize them.",
+  "author": {
+    "name": "Anka Hukuk",
+    "email": "accengiz@anka.law"
+  },
+  "keywords": ["ttsg", "ticaret sicili", "gazete", "ilan", "turkey", "legal"],
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "hooks": "./hooks/hooks.json"
+}

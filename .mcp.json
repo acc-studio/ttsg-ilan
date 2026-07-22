@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ttsg": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/launcher.mjs"]
+    }
+  }
+}
