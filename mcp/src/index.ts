@@ -40,8 +40,12 @@ server.tool(
   {},
   async () => {
     try {
-      await login();
-      return textResult("Logged in to ticaretsicil.gov.tr. The session is saved; you can now search.");
+      const { windowless } = await login();
+      return textResult(
+        windowless
+          ? "Logged in to ticaretsicil.gov.tr. The browser window has closed — searches now run in the background (no window). The session is saved."
+          : "Logged in to ticaretsicil.gov.tr. The session is saved; you can now search. (Note: the session did not carry into the background browser, so a window may reappear on the next login.)"
+      );
     } catch (err) {
       return errorResult(err instanceof Error ? err.message : String(err));
     }
