@@ -6,7 +6,7 @@ summarize individual ilans — all from Claude.
 
 ---
 
-## Install (firm members)
+## Install
 
 
 In Claude Code, run these three commands:
@@ -27,7 +27,7 @@ TTSG tools say they aren't ready yet, wait a minute and restart — or run:
 ```
 
 That's it. To use it, just ask — e.g. *"Ant Systems'in Gebze'deki ilanlarını
-getir"*. The **first search opens a browser window for you to log in to e-Devlet
+getir"*. The **first search opens a browser window for you to log in to TTSG
 yourself** (the plugin never types your credentials or solves the CAPTCHA). Your
 login is saved, so you rarely repeat it.
 
